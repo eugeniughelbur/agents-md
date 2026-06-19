@@ -59,8 +59,10 @@ The convergence: write one **AGENTS.md** and symlink the rest. `agents-md` does 
 
 ```bash
 cd your-repo
-npx github:eugeniughelbur/agents-md
+npx @eugeniughelbur/agents-md
 ```
+
+(or straight from source: `npx github:eugeniughelbur/agents-md`)
 
 It scans the repo, writes or refreshes `AGENTS.md`, symlinks `CLAUDE.md` to it, and reports which sections it filled vs left as stubs for you to complete. Flags: `--dry-run`, `--no-symlink`. Run it again any time, it is a safe refresh, never a reset.
 

@@ -14,7 +14,7 @@
 - Works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, and more. CLAUDE.md is symlinked to AGENTS.md.
 
 ## Use
-- CLI (any repo, no dependencies, no API key): `npx github:eugeniughelbur/agents-md`
+- CLI (any repo, no dependencies, no API key): `npx @eugeniughelbur/agents-md`
 - Claude Code skill: `npx skills add eugeniughelbur/agents-md`, then run `/agents-md`
 
 ## Key links
