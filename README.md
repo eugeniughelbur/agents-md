@@ -18,23 +18,24 @@ One `AGENTS.md` works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, W
 
 A lean (~200 line) `AGENTS.md` with: Overview, Commands, Testing, Project structure, Code style & conventions, Git workflow, Gotchas, Security & secrets, and a three-tier **Boundaries** section. See [`templates/AGENTS.template.md`](templates/AGENTS.template.md).
 
-## Install (Claude Code skill)
+## Use it
+
+**As a CLI (any repo, no API key, zero dependencies):**
+
+```bash
+cd your-repo
+npx github:eugeniughelbur/agents-md
+```
+
+It scans the repo, writes or refreshes `AGENTS.md`, symlinks `CLAUDE.md` to it, and reports which sections it filled vs left as stubs for you to complete. Flags: `--dry-run`, `--no-symlink`. Run it again any time, it is a safe refresh, never a reset.
+
+**As a Claude Code skill (LLM-powered, richer):**
 
 ```bash
 npx skills add eugeniughelbur/agents-md
 ```
 
-Or clone and symlink into `~/.claude/skills/agents-md`.
-
-## Use
-
-In any repo, run:
-
-```
-/agents-md
-```
-
-It reads the repo, writes or refreshes `AGENTS.md`, wires `CLAUDE.md` to it, and reports which sections it filled vs left as stubs. Run it again any time, it is a safe refresh, never a reset.
+Then run `/agents-md` in any repo. The skill reads your code intelligently and writes deeper content (real gotchas, real boundaries); the CLI is the fast, deterministic, zero-setup option. Both honor the same safe-marker contract.
 
 ## The marker contract
 

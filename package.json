@@ -1,0 +1,41 @@
+{
+  "name": "agents-md",
+  "version": "0.1.0",
+  "description": "Generate and safely maintain AGENTS.md, the cross-tool standard for AI coding agents. Non-destructive re-runs, never fabricates.",
+  "bin": {
+    "agents-md": "bin/agents-md.js"
+  },
+  "type": "commonjs",
+  "files": [
+    "bin",
+    "templates",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": [
+    "agents.md",
+    "agents-md",
+    "ai",
+    "ai-coding-agents",
+    "claude",
+    "cursor",
+    "copilot",
+    "codegen",
+    "cli",
+    "developer-tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eugeniughelbur/agents-md.git"
+  },
+  "homepage": "https://github.com/eugeniughelbur/agents-md",
+  "bugs": {
+    "url": "https://github.com/eugeniughelbur/agents-md/issues"
+  },
+  "license": "MIT",
+  "author": "Eugeniu Ghelbur"
+}
