@@ -1,10 +1,29 @@
-# agents-md
+<p align="center">
+  <img src="media/banner.png" alt="agents-md: generate and safely maintain an AGENTS.md, the cross-tool standard read by Cursor, GitHub Copilot, Codex, Gemini CLI, Aider, Windsurf, Zed, and Claude Code." width="100%" />
+</p>
 
-**Generate and safely maintain an [AGENTS.md](https://agents.md) for any repo, the cross-tool standard that AI coding agents read.**
+<h1 align="center">agents-md</h1>
 
-[![standard: AGENTS.md](https://img.shields.io/badge/standard-AGENTS.md-111)](https://agents.md) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node >=16](https://img.shields.io/badge/node-%3E%3D16-green)](package.json) [![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
+<p align="center">
+  <strong>Generate and safely maintain an <a href="https://agents.md">AGENTS.md</a> for any repo. The cross-tool standard that AI coding agents read.</strong>
+</p>
 
-> AGENTS.md generator and maintainer. Create, update, and keep an AGENTS.md (and CLAUDE.md) fresh for Cursor, GitHub Copilot, Codex, Gemini CLI, Aider, Windsurf, Zed, and Claude Code, from one command.
+<p align="center">
+  <img src="https://img.shields.io/badge/Cursor-000?style=for-the-badge&logo=cursor&logoColor=white" alt="Cursor" />
+  <img src="https://img.shields.io/badge/GitHub_Copilot-000?style=for-the-badge&logo=githubcopilot&logoColor=white" alt="GitHub Copilot" />
+  <img src="https://img.shields.io/badge/Codex-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI Codex" />
+  <img src="https://img.shields.io/badge/Claude_Code-D97757?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude Code" />
+  <img src="https://img.shields.io/badge/Gemini_CLI-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Gemini CLI" />
+  <img src="https://img.shields.io/badge/Aider-14B8A6?style=for-the-badge" alt="Aider" />
+</p>
+
+<p align="center">
+  <a href="https://agents.md"><img src="https://img.shields.io/badge/standard-AGENTS.md-111?style=for-the-badge" alt="AGENTS.md standard" /></a>
+  <img src="https://img.shields.io/github/stars/eugeniughelbur/agents-md?style=for-the-badge&color=yellow" alt="Stars" />
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/dependencies-0-brightgreen?style=for-the-badge" alt="Zero dependencies" />
+  <a href="https://eugeniughelbur.github.io/agents-md/"><img src="https://img.shields.io/badge/website-live-111?style=for-the-badge" alt="Website" /></a>
+</p>
 
 One `AGENTS.md` works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin, and more. `CLAUDE.md` is pointed at it via symlink. This skill writes a great one for you by reading your repo, and it is **safe to re-run**: it only updates the regions it generated and never clobbers anything you wrote by hand.
 
@@ -83,4 +102,15 @@ No. The CLI has zero dependencies, makes no network calls, and reads only repo m
 ## License
 
 MIT
+
+---
+
+<p align="center"><strong>Built by Eugeniu Ghelbur.</strong> If agents-md kept an AI agent from breaking your repo, a ⭐ helps others find it.</p>
+
+<p align="center">
+<a href="https://x.com/eugeniu_ghelbur"><img src="https://img.shields.io/badge/Follow_on_X-000?style=for-the-badge&logo=x&logoColor=white" alt="Follow on X" /></a>
+<a href="https://www.linkedin.com/in/eugeniu-ghelbur/"><img src="https://img.shields.io/badge/Connect_on_LinkedIn-0A66C2?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0yMC40NDcgMjAuNDUyaC0zLjU1NHYtNS41NjljMC0xLjMyOC0uMDI3LTMuMDM3LTEuODUyLTMuMDM3LTEuODUzIDAtMi4xMzYgMS40NDUtMi4xMzYgMi45Mzl2NS42NjdIOS4zNTFWOWgzLjQxNHYxLjU2MWguMDQ2Yy40NzctLjkgMS42MzctMS44NSAzLjM3LTEuODUgMy42MDEgMCA0LjI2NyAyLjM3IDQuMjY3IDUuNDU1djYuMjg2ek01LjMzNyA3LjQzM2MtMS4xNDQgMC0yLjA2My0uOTI2LTIuMDYzLTIuMDY1IDAtMS4xMzguOTItMi4wNjMgMi4wNjMtMi4wNjMgMS4xNCAwIDIuMDY0LjkyNSAyLjA2NCAyLjA2MyAwIDEuMTM5LS45MjUgMi4wNjUtMi4wNjQgMi4wNjV6bTEuNzgyIDEzLjAxOUgzLjU1NVY5aDMuNTY0djExLjQ1MnpNMjIuMjI1IDBIMS43NzFDLjc5MiAwIDAgLjc3NCAwIDEuNzI5djIwLjU0MkMwIDIzLjIyNy43OTIgMjQgMS43NzEgMjRoMjAuNDUxQzIzLjIgMjQgMjQgMjMuMjI3IDI0IDIyLjI3MVYxLjcyOUMyNCAuNzc0IDIzLjIgMCAyMi4yMjIgMGguMDAzeiIvPjwvc3ZnPg%3D%3D" alt="Connect on LinkedIn" /></a>
+<a href="https://theaioperator.io"><img src="https://img.shields.io/badge/Subscribe_on_Substack-FF6719?style=for-the-badge&logo=substack&logoColor=white" alt="Subscribe on Substack" /></a>
+<a href="https://github.com/eugeniughelbur"><img src="https://img.shields.io/badge/Follow_on_GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Follow on GitHub" /></a>
+</p>
 
