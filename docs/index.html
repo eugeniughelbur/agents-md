@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agents-md — Generate an AGENTS.md for any repo (the AI coding agent standard)</title>
+<meta name="description" content="agents-md is a zero-dependency CLI and Claude Code skill that generates and safely maintains an AGENTS.md, the cross-tool standard read by Cursor, GitHub Copilot, Codex, Gemini CLI, Aider, Windsurf, and Zed. Never fabricates, never clobbers your edits.">
+<link rel="canonical" href="https://eugeniughelbur.github.io/agents-md/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<meta name="keywords" content="AGENTS.md, AGENTS.md generator, CLAUDE.md, agents.md, AI coding agents, Cursor rules, Copilot instructions, llms.txt, generate AGENTS.md, AI context file">
+<!-- Open Graph / chat link previews -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="agents-md — Generate an AGENTS.md for any repo">
+<meta property="og:description" content="Zero-dependency CLI + Claude Code skill that generates and safely maintains AGENTS.md, the cross-tool standard for AI coding agents. Never fabricates, never clobbers your edits.">
+<meta property="og:url" content="https://eugeniughelbur.github.io/agents-md/">
+<meta name="twitter:card" content="summary">
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 760px; margin: 0 auto; padding: 2rem 1.2rem 4rem; color: #1a1a1a; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #0f0f10; } a { color: #79b8ff; } code, pre { background: #1c1c1f !important; } th { background:#1c1c1f !important; } }
+  h1 { font-size: 2rem; margin: 0 0 .25rem; }
+  .tag { color: #666; font-size: 1.05rem; margin-top: 0; }
+  code { background: #f3f3f4; padding: .15em .4em; border-radius: 4px; font-size: .92em; }
+  pre { background: #f3f3f4; padding: .9rem 1rem; border-radius: 8px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+  th, td { border: 1px solid #ddd; padding: .5rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f7f7f8; }
+  .badges img { height: 20px; margin-right: .3rem; }
+  h2 { margin-top: 2.2rem; border-bottom: 1px solid #eee; padding-bottom: .3rem; }
+  footer { margin-top: 3rem; color: #777; font-size: .9rem; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "agents-md",
+  "description": "A zero-dependency CLI and Claude Code skill that generates and safely maintains an AGENTS.md, the cross-tool standard that AI coding agents read.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform (Node.js >= 16)",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://github.com/eugeniughelbur/agents-md",
+  "author": { "@type": "Person", "name": "Eugeniu Ghelbur" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is AGENTS.md?", "acceptedAnswer": { "@type": "Answer", "text": "AGENTS.md is an open, cross-tool standard file that tells AI coding agents how to work in your repository: its build and test commands, code conventions, gotchas, and do-not-touch boundaries. It originated at OpenAI in 2025 and is now governed by the Linux Foundation's Agentic AI Foundation. Think of it as a README for agents." } },
+    { "@type": "Question", "name": "How do I generate an AGENTS.md?", "acceptedAnswer": { "@type": "Answer", "text": "Run npx github:eugeniughelbur/agents-md in your repo. It detects your stack, commands, and structure, writes AGENTS.md, and symlinks CLAUDE.md. Anything it cannot detect is left as a clearly marked stub for you to fill in." } },
+    { "@type": "Question", "name": "AGENTS.md vs CLAUDE.md, which should I use?", "acceptedAnswer": { "@type": "Answer", "text": "Use AGENTS.md as the single source, then symlink CLAUDE.md to it. Most agents read AGENTS.md natively; Claude Code reads CLAUDE.md, so the symlink covers both. agents-md sets this up automatically." } },
+    { "@type": "Question", "name": "Is agents-md safe to re-run?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Re-runs refresh only the regions wrapped in HTML-comment markers; everything outside is preserved. A handwritten AGENTS.md with no markers is never overwritten, agents-md writes AGENTS.generated.md instead." } }
+  ]
+}
+</script>
+</head>
+<body>
+<h1>agents-md</h1>
+<p class="tag">Generate and safely maintain an <strong>AGENTS.md</strong> for any repo, the cross-tool standard that AI coding agents read.</p>
+<p class="badges">
+  <a href="https://agents.md"><img alt="standard: AGENTS.md" src="https://img.shields.io/badge/standard-AGENTS.md-111"></a>
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="node >=16" src="https://img.shields.io/badge/node-%3E%3D16-green">
+  <img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
+</p>
+
+<p>One <code>AGENTS.md</code> works across <strong>Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin</strong>, and more. <code>CLAUDE.md</code> is pointed at it via symlink. <code>agents-md</code> writes a great one by reading your repo, and it is <strong>safe to re-run</strong>: it only updates the regions it generated and never clobbers anything you wrote by hand.</p>
+
+<h2>Quick start</h2>
+<pre><code>cd your-repo
+npx github:eugeniughelbur/agents-md</code></pre>
+<p>Or as a Claude Code skill: <code>npx skills add eugeniughelbur/agents-md</code>, then run <code>/agents-md</code>.</p>
+
+<h2>Why agents-md</h2>
+<ul>
+  <li><strong>Aligned with the standard.</strong> Targets AGENTS.md, the file backed by the Linux Foundation's Agentic AI Foundation and used in 60,000+ repos.</li>
+  <li><strong>Safe, non-destructive re-runs.</strong> Generated sections are wrapped in markers; your hand-written content is never touched. A handwritten file with no markers is left alone and a <code>AGENTS.generated.md</code> is written instead.</li>
+  <li><strong>Never fabricates.</strong> Facts are read from your repo; anything it cannot find is left as a clearly marked stub, never invented.</li>
+  <li><strong>Boundaries-first.</strong> Every file gets a three-tier guardrail (Always / Ask first / Never), the section that most prevents destructive agent mistakes.</li>
+  <li><strong>Zero dependencies, no API key, no network calls.</strong></li>
+</ul>
+
+<h2>AGENTS.md vs CLAUDE.md vs .cursorrules vs llms.txt</h2>
+<table>
+<tr><th>File</th><th>Read by</th><th>What it is</th></tr>
+<tr><td><strong>AGENTS.md</strong></td><td>Codex, Cursor, Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin</td><td>The cross-tool standard for agent instructions</td></tr>
+<tr><td>CLAUDE.md</td><td>Claude Code</td><td>Tool-specific; symlink it to AGENTS.md</td></tr>
+<tr><td>.cursorrules</td><td>Cursor</td><td>Tool-specific (Cursor also reads AGENTS.md)</td></tr>
+<tr><td>.github/copilot-instructions.md</td><td>GitHub Copilot</td><td>Tool-specific (Copilot also reads AGENTS.md)</td></tr>
+<tr><td>llms.txt</td><td>LLMs / AI search</td><td>For documentation sites, not repo agent instructions</td></tr>
+</table>
+
+<h2>FAQ</h2>
+<h3>What is AGENTS.md?</h3>
+<p>AGENTS.md is an open, cross-tool standard file that tells AI coding agents how to work in your repository: its build and test commands, code conventions, gotchas, and do-not-touch boundaries. It originated at OpenAI in 2025 and is now governed by the Linux Foundation's Agentic AI Foundation. Think of it as a README for agents.</p>
+<h3>AGENTS.md vs CLAUDE.md, which should I use?</h3>
+<p>Use AGENTS.md as the single source, then symlink CLAUDE.md to it. Most agents read AGENTS.md natively; Claude Code reads CLAUDE.md, so the symlink covers both. agents-md sets this up automatically.</p>
+<h3>Is it safe to re-run? Will it overwrite my edits?</h3>
+<p>Yes, it is safe. Re-runs refresh only the regions wrapped in HTML-comment markers; everything outside the markers is preserved. A handwritten AGENTS.md with no markers is never overwritten.</p>
+<h3>Does it need an API key or send my code anywhere?</h3>
+<p>No. The CLI has zero dependencies, makes no network calls, and reads only repo metadata (and .env.example, never real secret values).</p>
+
+<footer>
+<p>Open source (MIT). Repository: <a href="https://github.com/eugeniughelbur/agents-md">github.com/eugeniughelbur/agents-md</a>. The AGENTS.md standard: <a href="https://agents.md">agents.md</a>.</p>
+</footer>
+</body>
+</html>

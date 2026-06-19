@@ -1,0 +1,31 @@
+# agents-md
+
+> agents-md generates and safely maintains an AGENTS.md file for any code repository.
+> AGENTS.md is the open, cross-tool standard (backed by the Linux Foundation's Agentic AI
+> Foundation) that AI coding agents read to understand a project: its commands, conventions,
+> gotchas, and do-not-touch boundaries. agents-md ships as a zero-dependency `npx` CLI and as a
+> Claude Code skill. It never fabricates (unknowns become stubs), and it never overwrites
+> content a human wrote: re-runs only refresh regions wrapped in HTML-comment markers, and a
+> handwritten AGENTS.md with no markers is left untouched (a AGENTS.generated.md is written
+> instead).
+
+## What it is
+- A generator + maintainer for AGENTS.md, the "README for AI coding agents".
+- Works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, and more. CLAUDE.md is symlinked to AGENTS.md.
+
+## Use
+- CLI (any repo, no dependencies, no API key): `npx github:eugeniughelbur/agents-md`
+- Claude Code skill: `npx skills add eugeniughelbur/agents-md`, then run `/agents-md`
+
+## Key links
+- Repository: https://github.com/eugeniughelbur/agents-md
+- README: https://github.com/eugeniughelbur/agents-md/blob/master/README.md
+- The AGENTS.md template it produces: https://github.com/eugeniughelbur/agents-md/blob/master/templates/AGENTS.template.md
+- AGENTS.md standard: https://agents.md
+
+## Why it exists
+Generic AI-context generators either fabricate details or overwrite hand-written docs on re-run.
+agents-md is safe-by-default: deterministic detection, explicit stubs for unknowns, and
+machine-enforced markers so re-running is always a refresh, never a reset. Its most valued output
+is the three-tier Boundaries section (Always / Ask first / Never), which prevents destructive
+agent mistakes.
