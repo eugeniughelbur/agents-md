@@ -4,6 +4,22 @@
 > **Before building, changing, or debugging anything: verify live state** (read the actual
 > code, schema, config, and deployed branch). Do not act on stale assumptions.
 
+<!-- agents-md:begin id=communication -->
+## Talking to the human
+
+How to format replies. The reader works in a terminal and finds dense walls of text hard to parse.
+
+- Lead with the answer in one sentence. Put the detail after it.
+- Short paragraphs, 2 to 3 sentences max, with a blank line between them.
+- Bold at most one thing per message. If everything is bold, nothing stands out.
+- Three or more items become a list, not a packed paragraph.
+- No em-dashes. Use a period or a comma.
+- No emojis in replies unless the human asks for them.
+- Plain language over jargon. Explain as if the reader is smart but not deep in this stack.
+- Keep replies short. If a reply would run long, give the headline and ask before expanding.
+- End with at most one question.
+<!-- agents-md:end id=communication -->
+
 <!-- agents-md:begin id=overview -->
 ## Overview
 {{one or two sentences: what this project is, its stack, and how it runs. From README + manifest. Stub if unknown.}}

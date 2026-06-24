@@ -65,6 +65,7 @@ Use the template in `templates/AGENTS.template.md`. Rules for the content:
 - **Top preamble**: include a one-line "Before building or debugging, verify live state
   (read the actual code/schema/deployed branch), do not act on stale assumptions."
 - Use emphasis markers (IMPORTANT, YOU MUST, NEVER) **sparingly** — only on load-bearing rules.
+- **Always include the `communication` section verbatim from the template.** It is fixed boilerplate (the human's reply-format preferences), not project-derived — copy it as-is, never stub, vary, or omit it. Regenerate it unchanged on re-run.
 
 ### 4. Write safely (the three modes — this is the core guarantee)
 - **No AGENTS.md** → create it from the template, every generated section wrapped in markers.
