@@ -80,5 +80,6 @@ The most important section. Keep it current.
 
 ---
 <!-- Generated and maintained by agents-md (https://github.com/eugeniughelbur/agents-md).
-     Content INSIDE `agents-md:begin/end` markers is regenerated on re-run.
+     Content INSIDE `agents-md:begin/end` markers is refreshed on re-run, unless you edited it:
+     an edited section is kept as you left it. Empty a section (keep its markers) to regenerate it.
      Everything OUTSIDE the markers (including ## Notes) is yours and is preserved. -->

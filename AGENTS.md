@@ -17,13 +17,14 @@ AGENTS.md and obey the same safe-marker contract. No runtime dependencies; Node 
 - Run the CLI locally: `node bin/agents-md.js` (in any target repo)
 - Try it end to end: `npx github:eugeniughelbur/agents-md`
 - Help / dry run: `node bin/agents-md.js --help` · `--dry-run`
-- No build, no install, no tests yet (_TBD: add a test harness with fixture repos_).
+- Test: `npm test` (runs `node test/run.js`, zero dependencies). No build, no install.
 <!-- agents-md:end id=commands -->
 
 <!-- agents-md:begin id=testing -->
 ## Testing
-Manual for now: run the CLI against a throwaway repo (`git init` + a `package.json`) and verify
-the three write modes (create, marker-update, no-clobber sidecar). _TBD: automate with fixtures._
+`node test/run.js` builds throwaway fixture repos and checks stack detection and re-run safety
+(an edited section is kept, an untouched one is refreshed). Add a fixture test for every bug fixed.
+Still check the three write modes (create, marker-update, no-clobber sidecar) by hand before a release.
 <!-- agents-md:end id=testing -->
 
 <!-- agents-md:begin id=structure -->

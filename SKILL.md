@@ -38,8 +38,8 @@ Read, don't assume. Pull real values from these sources:
 
 | Need | Read |
 |---|---|
-| Language / framework | `package.json`, `pyproject.toml` / `requirements.txt`, `go.mod`, `Cargo.toml`, `Gemfile`, `composer.json`, `pom.xml`, `*.csproj` |
-| Build / test / run / lint commands | `package.json` `scripts`, `Makefile`, `Taskfile`, `justfile`, `tox.ini`, `pyproject` `[tool.*]` |
+| Language / framework | `Cargo.toml`, `pyproject.toml` / `pixi.toml` / `requirements.txt`, `go.mod`, `package.json`, `Gemfile`, `composer.json`, `pom.xml`, `*.csproj`. A `package.json` next to another manifest is often tooling only (prettier, commit hooks), so check the other manifests first |
+| Build / test / run / lint commands | `package.json` `scripts`, `pixi.toml` `[tasks]`, `Makefile`, `Taskfile`, `justfile`, `tox.ini`, `pyproject` `[tool.*]` |
 | Project / file structure | top-level dirs + the main source dir (`src/`, `app/`, `lib/`, `cmd/`) |
 | Git workflow | default branch (`git symbolic-ref refs/remotes/origin/HEAD`), last ~15 commits for message/branch conventions, `CONTRIBUTING.md` |
 | Deploy / runtime | `Dockerfile`, `.github/workflows/`, `railway.json`/`railway.toml`, `vercel.json`, `fly.toml`, `Procfile` |
@@ -72,6 +72,11 @@ Use the template in `templates/AGENTS.template.md`. Rules for the content:
 - **AGENTS.md with our markers** → re-generate only the content *inside* each
   `<!-- agents-md:begin id=X -->` … `<!-- agents-md:end id=X -->` block. Preserve byte-for-byte
   everything outside the markers (that is the human-owned zone, including the `## Notes` section).
+  **Never replace a block a human edited.** If a stub was filled in, a line was added, or a line
+  was removed, keep that block exactly as it is and list it in the report. A block emptied on
+  purpose (markers kept, no content) may be regenerated. The CLI writes a `sha=` fingerprint in
+  the begin marker to tell these apart; when you rewrite a block yourself, write its begin marker
+  without `sha=` (the CLI then judges by content).
 - **AGENTS.md without our markers** (handwritten) → DO NOT touch it. Write
   `AGENTS.generated.md` beside it and tell the user to merge or adopt. Never clobber.
 
@@ -104,9 +109,9 @@ section current after any incident.
 
 ## The marker contract (document this in the generated file's footer)
 ```
-<!-- agents-md:begin id=commands -->     ← content here is regenerated on re-run
+<!-- agents-md:begin id=commands -->     ← refreshed on re-run while nobody has edited it
 ...generated content...
 <!-- agents-md:end id=commands -->
 ```
-Anything outside these markers is yours and is never modified. Put durable custom notes in the
+An edited block is kept as the human left it. Anything outside these markers is yours and is never modified. Put durable custom notes in the
 `## Notes` section (no markers) so they survive every re-run.

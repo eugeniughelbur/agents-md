@@ -8,6 +8,9 @@
   "bin": {
     "agents-md": "bin/agents-md.js"
   },
+  "scripts": {
+    "test": "node test/run.js"
+  },
   "type": "commonjs",
   "files": [
     "bin",

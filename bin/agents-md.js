@@ -10,14 +10,24 @@
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
+const crypto = require('crypto');
 
 const SECTIONS = [
   'overview', 'commands', 'testing', 'structure',
   'conventions', 'git', 'gotchas', 'security', 'boundaries',
 ];
-const begin = (id) => `<!-- agents-md:begin id=${id} -->`;
+const TITLES = {
+  overview: 'Overview', commands: 'Commands', testing: 'Testing', structure: 'Project structure',
+  conventions: 'Code style & conventions', git: 'Git & PR workflow', gotchas: 'Gotchas & hard-won lessons',
+  security: 'Security & secrets', boundaries: 'Boundaries',
+};
+// The begin marker carries a fingerprint of what this tool wrote, so a re-run can
+// tell an untouched region (refresh it) from one a human edited (keep it).
+const begin = (id, sha) => `<!-- agents-md:begin id=${id}${sha ? ` sha=${sha}` : ''} -->`;
 const end = (id) => `<!-- agents-md:end id=${id} -->`;
 const STUB = (what) => `_TBD: ${what}_`;
+const norm = (text) => text.replace(/\r\n/g, '\n').split('\n').map((l) => l.trimEnd()).join('\n').trim();
+const fingerprint = (text) => crypto.createHash('sha256').update(norm(text)).digest('hex').slice(0, 12);
 
 // ---------- tiny helpers ----------
 function sh(cmd) {
@@ -27,6 +37,26 @@ function sh(cmd) {
 function readIf(p) { try { return fs.readFileSync(p, 'utf8'); } catch { return null; } }
 function jsonIf(p) { const t = readIf(p); if (!t) return null; try { return JSON.parse(t); } catch { return null; } }
 function has(root, f) { return fs.existsSync(path.join(root, f)); }
+function tomlString(text, key) {
+  const m = text && text.match(new RegExp(`^${key}\\s*=\\s*"([^"]*)"`, 'm'));
+  return m ? m[1] : '';
+}
+// Task names from a pixi [tasks] / [tool.pixi.tasks] table or [tasks.<name>] subtables.
+function pixiTasks(text) {
+  const names = [];
+  let inTasks = false;
+  for (const line of (text || '').split(/\r?\n/)) {
+    if (/^\s*\[/.test(line)) {
+      const sub = line.match(/^\s*\[(?:tool\.pixi\.)?tasks\.([A-Za-z0-9_-]+)\]\s*$/);
+      if (sub) names.push(sub[1]);
+      inTasks = /^\s*\[(?:tool\.pixi\.)?tasks\]\s*$/.test(line);
+      continue;
+    }
+    const m = inTasks && line.match(/^\s*"?([A-Za-z0-9_-]+)"?\s*=/);
+    if (m) names.push(m[1]);
+  }
+  return names;
+}
 
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
@@ -54,12 +84,16 @@ function detect() {
   const f = { root, name: path.basename(root) };
   const pkg = jsonIf(path.join(root, 'package.json'));
   f.pkg = pkg;
+  const cargo = readIf(path.join(root, 'Cargo.toml'));
+  const pyproject = readIf(path.join(root, 'pyproject.toml'));
+  const pixi = readIf(path.join(root, 'pixi.toml'));
 
-  // language / ecosystem
-  if (pkg) f.lang = 'node';
-  else if (has(root, 'pyproject.toml') || has(root, 'requirements.txt') || has(root, 'setup.py')) f.lang = 'python';
+  // language / ecosystem. Other manifests win over package.json: Rust and Python
+  // repos often keep a package.json for tooling only (prettier, commit hooks).
+  if (cargo !== null) f.lang = 'rust';
+  else if (pyproject !== null || pixi !== null || has(root, 'requirements.txt') || has(root, 'setup.py')) f.lang = 'python';
   else if (has(root, 'go.mod')) f.lang = 'go';
-  else if (has(root, 'Cargo.toml')) f.lang = 'rust';
+  else if (pkg) f.lang = 'node';
   else if (has(root, 'Gemfile')) f.lang = 'ruby';
   else if (has(root, 'composer.json')) f.lang = 'php';
   else f.lang = null;
@@ -70,8 +104,14 @@ function detect() {
     : has(root, 'package-lock.json') ? 'npm'
     : pkg ? 'npm' : null;
 
+  // pixi (conda-based environments and tasks)
+  f.pixi = pixi !== null || /^\[tool\.pixi/m.test(pyproject || '');
+  f.pixiTasks = pixiTasks(pixi).concat(pixiTasks(pyproject));
+  if (f.lang === 'rust') f.desc = tomlString(cargo, 'description');
+  if (f.lang === 'python') f.desc = tomlString(pyproject, 'description') || tomlString(pixi, 'description');
+
   // framework guess (node)
-  if (pkg) {
+  if (pkg && f.lang === 'node') {
     const d = Object.assign({}, pkg.dependencies, pkg.devDependencies);
     const guesses = ['next', 'react', 'vue', 'svelte', '@angular/core', 'express', 'fastify', 'nestjs', '@nestjs/core', 'vite', 'typescript'];
     f.frameworks = guesses.filter((g) => d[g]);
@@ -131,6 +171,15 @@ function build(f) {
     pick('Lint', 'lint');
     pick('Typecheck', 'typecheck', 'tsc', 'check');
     pick('Format', 'format', 'fmt');
+  } else if (f.lang === 'python' && f.pixi) {
+    lines.push('- Install: `pixi install`');
+    const t = f.pixiTasks;
+    const pick = (label, ...keys) => { const k = keys.find((x) => t.includes(x)); if (k) lines.push(`- ${label}: \`pixi run ${k}\``); return k; };
+    if (!pick('Test', 'test', 'tests')) lines.push(`- Test: ${STUB('test command (no pixi test task found)')}`);
+    pick('Lint', 'lint');
+    pick('Typecheck', 'typecheck', 'type-check', 'mypy');
+    pick('Format', 'format', 'fmt');
+    pick('Build', 'build');
   } else if (f.lang === 'python') {
     lines.push(`- Install: ${STUB('e.g. pip install -r requirements.txt or pip install -e .')}`);
     lines.push(`- Test: \`pytest\`  ${has(f.root, 'pytest.ini') || has(f.root, 'tox.ini') ? '' : STUB('confirm test runner')}`);
@@ -184,45 +233,57 @@ function build(f) {
 }
 
 // ---------- render full file ----------
-function section(id, title, body) {
-  return `${begin(id)}\n## ${title}\n${body}\n${end(id)}`;
+function section(id, body) {
+  const inner = `## ${TITLES[id]}\n${body}`;
+  return `${begin(id, fingerprint(inner))}\n${inner}\n${end(id)}`;
 }
 function render(s) {
-  const titles = {
-    overview: 'Overview', commands: 'Commands', testing: 'Testing', structure: 'Project structure',
-    conventions: 'Code style & conventions', git: 'Git & PR workflow', gotchas: 'Gotchas & hard-won lessons',
-    security: 'Security & secrets', boundaries: 'Boundaries',
-  };
   const head = `# AGENTS.md
 
 > Guidance for AI coding agents working in this repo. Read this first.
 > **Before building, changing, or debugging anything: verify live state** (read the actual
 > code, config, and deployed branch). Do not act on stale assumptions.
 `;
-  const body = SECTIONS.map((id) => section(id, titles[id], s[id])).join('\n\n');
+  const body = SECTIONS.map((id) => section(id, s[id])).join('\n\n');
   const tail = `## Notes
 <!-- Human-owned. Anything here is never touched by re-runs of agents-md. -->
 
 ---
 <!-- Generated and maintained by agents-md (https://github.com/eugeniughelbur/agents-md).
-     Content INSIDE agents-md:begin/end markers is regenerated on re-run.
+     Content INSIDE agents-md:begin/end markers is refreshed on re-run, unless you edited it:
+     an edited section is kept as you left it. Empty a section (keep its markers) to regenerate it.
      Everything OUTSIDE the markers (including ## Notes) is yours and is preserved. -->`;
   return `${head}\n${body}\n\n${tail}\n`;
 }
 
 // ---------- safe write ----------
+// Did a human change this region since agents-md last wrote it?
+function edited(sha, oldInner, newInner) {
+  const content = norm(oldInner).split('\n').filter((l) => !/^## /.test(l)).join('\n').trim();
+  if (!content) return false; // emptied on purpose: regenerate it
+  if (sha) return fingerprint(oldInner) !== sha;
+  // No fingerprint (written by agents-md 0.1.0 or the skill): judge by content.
+  // Fewer stubs than a fresh run, or a real line a fresh run would not write,
+  // means someone filled it in.
+  const stubs = (t) => (t.match(/_TBD:/g) || []).length;
+  if (stubs(oldInner) < stubs(newInner)) return true;
+  const fresh = new Set(norm(newInner).split('\n'));
+  return norm(oldInner).split('\n').some((l) => l.trim() && !fresh.has(l) && !l.includes('_TBD:'));
+}
+
 function updateMarked(existing, s) {
   let out = existing;
   let touched = 0;
+  const kept = [];
   for (const id of SECTIONS) {
-    const re = new RegExp(`${begin(id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${end(id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
-    if (re.test(out)) {
-      const titles = { overview: 'Overview', commands: 'Commands', testing: 'Testing', structure: 'Project structure', conventions: 'Code style & conventions', git: 'Git & PR workflow', gotchas: 'Gotchas & hard-won lessons', security: 'Security & secrets', boundaries: 'Boundaries' };
-      out = out.replace(re, section(id, titles[id], s[id]));
-      touched++;
-    }
+    const re = new RegExp(`<!-- agents-md:begin id=${id}(?: sha=([0-9a-f]+))? -->\\n?([\\s\\S]*?)\\n?<!-- agents-md:end id=${id} -->`);
+    const m = out.match(re);
+    if (!m) continue;
+    if (edited(m[1], m[2], `## ${TITLES[id]}\n${s[id]}`)) { kept.push(id); continue; }
+    out = out.replace(re, () => section(id, s[id]));
+    touched++;
   }
-  return { out, touched };
+  return { out, touched, kept };
 }
 
 function main() {
@@ -231,11 +292,11 @@ function main() {
   const stubCount = Object.values(s).filter((v) => v.includes('_TBD:')).length;
   const target = path.join(root, 'AGENTS.md');
 
-  let mode, writePath = target, content;
+  let mode, writePath = target, content, kept = [];
   if (!f.agentsExisting) {
     mode = 'create'; content = render(s);
   } else if (f.agentsExisting.includes('agents-md:begin')) {
-    mode = 'update'; const r = updateMarked(f.agentsExisting, s); content = r.out;
+    mode = 'update'; const r = updateMarked(f.agentsExisting, s); content = r.out; kept = r.kept;
   } else {
     mode = 'sidecar'; writePath = path.join(root, 'AGENTS.generated.md'); content = render(s);
   }
@@ -244,12 +305,14 @@ function main() {
   if (DRY) {
     console.log(`[dry-run] would ${mode} ${path.relative(root, writePath)} (${stubCount} section(s) need filling)`);
     if (mode === 'sidecar') console.log('[dry-run] existing AGENTS.md has no markers — it would be left untouched.');
+    if (kept.length) console.log(`[dry-run] would keep ${kept.length} section(s) you edited: ${kept.join(', ')}.`);
     return;
   }
 
   fs.writeFileSync(writePath, content);
   if (mode === 'create') console.log(`Created ${path.relative(root, writePath)} (${stubCount} section(s) marked TBD — fill those in).`);
   if (mode === 'update') console.log(`Refreshed marked sections in AGENTS.md (preserved your edits outside the markers).`);
+  if (kept.length) console.log(`Kept ${kept.length} section(s) you edited: ${kept.join(', ')}. To regenerate one, empty it and keep its markers.`);
   if (mode === 'sidecar') console.log(`AGENTS.md exists without markers — left it untouched and wrote AGENTS.generated.md. Merge or adopt it.`);
 
   // CLAUDE.md compatibility (Claude Code does not read AGENTS.md natively)
