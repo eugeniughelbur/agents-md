@@ -7,9 +7,11 @@ description: >
   Use this skill when the user wants to document a repo for AI agents, create or refresh
   an AGENTS.md / CLAUDE.md, add agent onboarding/context to a project, set up "read this
   before building" rules, or establish do-not-touch boundaries so an agent does not break
-  things. Re-runnable and non-destructive: it never clobbers handwritten docs. Triggers on
-  "agents.md", "document this repo for AI", "AGENTS file", "AI context file", "agent
-  instructions", "prime this repo", "/agents-md".
+  things. Also use it to check whether Claude Code reads a repo's AGENTS.md (it skips the
+  file whenever a CLAUDE.md exists). Re-runnable and non-destructive: it never clobbers
+  handwritten docs. Triggers on "agents.md", "document this repo for AI", "AGENTS file",
+  "AI context file", "agent instructions", "prime this repo", "Claude ignores my
+  AGENTS.md", "check my AGENTS.md", "/agents-md".
 ---
 
 # agents-md
@@ -17,7 +19,14 @@ description: >
 Generate and maintain a high-quality **AGENTS.md** for the current repository, then wire
 the other agent tools to it. AGENTS.md is the converging cross-tool standard (OpenAI 2025,
 now Linux Foundation / Agentic AI Foundation governance, 60k+ repos). One AGENTS.md is read
-by most coding agents; `CLAUDE.md` and others are pointed at it via symlink.
+by most coding agents. Claude Code reads it too (v2.1.277+), but only while no `CLAUDE.md`,
+`.claude/CLAUDE.md` or `CLAUDE.local.md` exists in the folder or above, so `CLAUDE.md` is
+pointed at it via symlink or an `@AGENTS.md` import.
+
+**Check-only requests** ("does Claude read my AGENTS.md?", "check my repos"): skip steps 2 to 4.
+Run the bundled CLI from this skill's folder: `node <skill folder>/bin/agents-md.js --check` for
+the current repo, or `--scan <dir>` for every folder under a directory. Show the user the result.
+Offer `--fix-claude --dry-run` for `SKIPS` lines, and run `--fix-claude` only after a yes.
 
 This skill is **safe to re-run**. It only rewrites the regions it generated (marked with
 HTML comments) and never overwrites content a human wrote. That guarantee is the whole point.
@@ -84,18 +93,24 @@ When updating, if a previously-detected fact is now missing, keep the prior gene
 but flag it (`_TBD: was '<old>', not detected this run — verify_`) rather than deleting silently.
 
 ### 5. Wire the other tools to AGENTS.md (compatibility)
-- `CLAUDE.md`: if absent, create a symlink `CLAUDE.md -> AGENTS.md` (Claude Code does not read
-  AGENTS.md natively, so this is required, not optional). If it already symlinks to AGENTS.md,
-  leave it. If it is a real handwritten file, ASK before changing — offer to fold its content
-  into AGENTS.md then replace it with a symlink.
+- `CLAUDE.md`: if absent, create a symlink `CLAUDE.md -> AGENTS.md`. Claude Code would read
+  AGENTS.md alone too, but the symlink also covers versions before v2.1.277. If it already
+  symlinks to AGENTS.md, leave it. If it is a real handwritten file, Claude Code is skipping
+  AGENTS.md. ASK before changing it, and offer the smallest fix first: add `@AGENTS.md` as its
+  first line (the CLI's `--fix-claude` does exactly this). A markdown link such as
+  `See [AGENTS.md](AGENTS.md)` does NOT load the file; only the `@AGENTS.md` import does.
+- Do not add the import when CLAUDE.md already holds the same text (it would load twice), or
+  when AGENTS.md is written for Codex only (title names Codex). Those splits tend to be on
+  purpose. Say so in the report instead.
 - Offer (don't force) the same pointer for `.cursor/rules/agents.md`,
-  `.github/copilot-instructions.md`, `GEMINI.md` — symlink or a one-line include.
-- On Windows or where symlinks fail, write a one-line stub file that says "See AGENTS.md".
+  `.github/copilot-instructions.md`, `GEMINI.md`: a symlink or a one-line include.
+- On Windows or where symlinks fail, write a CLAUDE.md whose only line is `@AGENTS.md`.
 
-### 6. Report
-List: file created/updated and in which mode; which sections were filled vs left as stubs (so
-the user knows what to fill in); symlinks/aliases created; and a reminder to keep the Boundaries
-section current after any incident.
+### 6. Check and report
+Run `node <skill folder>/bin/agents-md.js --check` and include its result. Then list: file
+created/updated and in which mode; which sections were filled vs left as stubs (so the user
+knows what to fill in); symlinks/imports created; whether Claude Code reads the file; and a
+reminder to keep the Boundaries section current after any incident.
 
 ---
 

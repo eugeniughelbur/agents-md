@@ -25,7 +25,7 @@
   <a href="https://eugeniughelbur.github.io/agents-md/"><img src="https://img.shields.io/badge/website-live-111?style=for-the-badge" alt="Website" /></a>
 </p>
 
-One `AGENTS.md` works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin, and more. `CLAUDE.md` is pointed at it via symlink. This skill writes a great one for you by reading your repo, and it is **safe to re-run**: it only updates the regions it generated and never clobbers anything you wrote by hand.
+One `AGENTS.md` works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin, and more. Claude Code reads it too, but only while no `CLAUDE.md` exists, so agents-md links `CLAUDE.md` to it and can check any repo for that silent skip. This skill writes a great one for you by reading your repo, and it is **safe to re-run**: it only updates the regions it generated and never clobbers anything you wrote by hand.
 
 > Backed by the standard: AGENTS.md started at OpenAI (2025) and is now under the Linux Foundation's Agentic AI Foundation, used in 60,000+ repositories.
 
@@ -36,6 +36,7 @@ One `AGENTS.md` works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, W
 - **Never fabricates.** Facts are read from your repo (manifests, scripts, Makefile, git history, CI, `.env.example`). Anything it cannot find is left as a clearly-marked stub for you to fill, never invented.
 - **Boundaries-first.** Every file gets the three-tier guardrail (✅ Always / ⚠️ Ask first / 🚫 Never), the section GitHub's analysis of 2,500+ repos found most prevents destructive mistakes.
 - **One source, every tool.** Symlinks `CLAUDE.md` (and optionally Cursor / Copilot configs) to the same `AGENTS.md`.
+- **Catches the Claude Code skip.** Any `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` in the folder or above makes Claude Code ignore `AGENTS.md`, with no warning. `--check` and `--scan` find it, and `--fix-claude` adds the one-line `@AGENTS.md` import that fixes it.
 
 ## What it generates
 
@@ -45,8 +46,8 @@ A lean (~200 line) `AGENTS.md` with: Overview, Commands, Testing, Project struct
 
 | File | Read by | What it is |
 |---|---|---|
-| **AGENTS.md** | Codex, Cursor, Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin, and more | The cross-tool standard for agent instructions (Linux Foundation / Agentic AI Foundation) |
-| CLAUDE.md | Claude Code | Tool-specific; symlink it to AGENTS.md |
+| **AGENTS.md** | Codex, Cursor, Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin, and more. Claude Code only when no CLAUDE.md exists | The cross-tool standard for agent instructions (Linux Foundation / Agentic AI Foundation) |
+| CLAUDE.md | Claude Code | Tool-specific. While it exists, Claude Code skips AGENTS.md, so symlink it to AGENTS.md or put `@AGENTS.md` on its first line |
 | .cursorrules / .cursor/rules | Cursor | Tool-specific (Cursor also reads AGENTS.md) |
 | .github/copilot-instructions.md | GitHub Copilot | Tool-specific (Copilot also reads AGENTS.md) |
 | llms.txt | LLMs / AI search engines | For documentation websites, not repo agent instructions |
@@ -65,6 +66,25 @@ npx @eugeniughelbur/agents-md
 (or straight from source: `npx github:eugeniughelbur/agents-md`)
 
 It scans the repo, writes or refreshes `AGENTS.md`, symlinks `CLAUDE.md` to it, and reports which sections it filled vs left as stubs for you to complete. Flags: `--dry-run`, `--no-symlink`. Run it again any time, it is a safe refresh, never a reset.
+
+**Check that Claude Code reads it:**
+
+```bash
+npx @eugeniughelbur/agents-md --check                  # this repo
+npx @eugeniughelbur/agents-md --scan ~/code            # every folder with an AGENTS.md under ~/code
+npx @eugeniughelbur/agents-md --scan ~/code --fix-claude --dry-run   # see the fix first
+```
+
+`--check` tells you if Claude Code reads this repo's `AGENTS.md`. It also shows which of the 6 areas from GitHub's study of 2,500+ files it covers (judged by its headings), the stubs left, and its size against the 32 KiB Codex reads by default. `--scan` prints one line per folder:
+
+```
+ok     web-app       reads AGENTS.md (imported with @AGENTS.md); areas 6/6
+SKIPS  api           SKIPS AGENTS.md: CLAUDE.md wins; areas 4/6
+same   tools/cli     skips AGENTS.md, but CLAUDE.md already holds the same text; areas 3/6
+codex  scripts       skips AGENTS.md, which is titled for Codex only (likely on purpose); areas 1/6
+```
+
+`--fix-claude` adds `@AGENTS.md` to the top of `CLAUDE.md` only in the `SKIPS` folders. It leaves `same` and `codex` folders alone. Both `--check` and `--scan` exit with code 1 while a skip remains, so you can run them in CI.
 
 **As a Claude Code skill (LLM-powered, richer):**
 
@@ -90,10 +110,13 @@ The `sha=` value is a fingerprint of what agents-md wrote. On a re-run, a sectio
 AGENTS.md is an open, cross-tool standard file that tells AI coding agents how to work in your repository: its build and test commands, code conventions, gotchas, and do-not-touch boundaries. It originated at OpenAI in 2025 and is now governed by the Linux Foundation's Agentic AI Foundation. Think of it as a README for agents.
 
 **AGENTS.md vs CLAUDE.md, which should I use?**
-Use AGENTS.md as the single source, then symlink CLAUDE.md to it. Most agents read AGENTS.md natively; Claude Code reads CLAUDE.md, so the symlink covers both. agents-md sets this up for you automatically.
+Use AGENTS.md as the single source. Claude Code reads AGENTS.md since v2.1.277, but only when no CLAUDE.md, .claude/CLAUDE.md or CLAUDE.local.md exists in the folder or any folder above it. If you keep a CLAUDE.md, put `@AGENTS.md` on its first line, or make CLAUDE.md a symlink to AGENTS.md. agents-md creates the symlink for you, and `--check` tells you if Claude Code is skipping the file.
+
+**Why does Claude Code ignore my AGENTS.md?**
+A CLAUDE.md, .claude/CLAUDE.md or CLAUDE.local.md exists in that folder or above it. Claude Code then loads that file and skips AGENTS.md without a warning. Run `npx @eugeniughelbur/agents-md --check` to see which file wins, and `--fix-claude` to add the `@AGENTS.md` import. Source: the [Claude Code memory docs](https://code.claude.com/docs/en/memory).
 
 **How do I generate an AGENTS.md?**
-Run `npx github:eugeniughelbur/agents-md` in your repo. It detects your stack, commands, and structure, writes AGENTS.md, and symlinks CLAUDE.md. Anything it cannot detect is left as a clearly marked stub for you to fill in.
+Run `npx @eugeniughelbur/agents-md` in your repo. It detects your stack, commands, and structure, writes AGENTS.md, and symlinks CLAUDE.md. Anything it cannot detect is left as a clearly marked stub for you to fill in.
 
 **Is it safe to re-run? Will it overwrite my edits?**
 Yes, it is safe. Re-runs refresh only the regions wrapped in HTML-comment markers, and skip any of those you edited, such as a stub you filled in. Everything outside the markers is preserved. A handwritten AGENTS.md with no markers is never overwritten, agents-md writes AGENTS.generated.md instead.

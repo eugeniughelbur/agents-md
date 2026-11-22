@@ -1,10 +1,10 @@
 {
   "name": "@eugeniughelbur/agents-md",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publishConfig": {
     "access": "public"
   },
-  "description": "Generate and safely maintain AGENTS.md, the cross-tool standard for AI coding agents. Non-destructive re-runs, never fabricates.",
+  "description": "Generate and safely maintain AGENTS.md, the cross-tool standard for AI coding agents, and check that Claude Code reads it. Non-destructive re-runs, never fabricates.",
   "bin": {
     "agents-md": "bin/agents-md.js"
   },

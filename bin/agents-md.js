@@ -8,6 +8,7 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const cp = require('child_process');
 const crypto = require('crypto');
@@ -58,15 +59,157 @@ function pixiTasks(text) {
   return names;
 }
 
+// ---------- does Claude Code read this AGENTS.md? ----------
+// Claude Code (v2.1.277+) reads AGENTS.md only when no CLAUDE.md, .claude/CLAUDE.md or
+// CLAUDE.local.md exists in the folder or any folder above it (~/.claude/CLAUDE.md does
+// not count). Any of those files wins silently. A CLAUDE.md -> AGENTS.md symlink or an
+// `@AGENTS.md` import line brings it back.
+// Source: https://code.claude.com/docs/en/memory (AGENTS.md section).
+const CLAUDE_FILES = ['CLAUDE.md', path.join('.claude', 'CLAUDE.md'), 'CLAUDE.local.md'];
+const CODEX_LIMIT = 32 * 1024; // Codex default project_doc_max_bytes
+// The six areas GitHub's study of 2,500+ AGENTS.md files found in the files that work.
+const AREAS = [
+  ['commands', /command|build|install|setup|run|script/i],
+  ['testing', /test/i],
+  ['project structure', /structure|layout|architecture|director|map of/i],
+  ['code style', /style|convention|lint|format/i],
+  ['git workflow', /git|commit|pull request|\bprs?\b|branch|release/i],
+  ['boundaries', /boundar|never|do not|don't|ask first|always|guardrail|safety/i],
+];
+const withoutFences = (t) => t.replace(/```[\s\S]*?```/g, '');
+const importsIn = (text, ref) => text !== null && new RegExp(`^[ \\t]*@${ref}[ \\t]*$`, 'm').test(withoutFences(text));
+const lineSet = (t) => new Set(t.split('\n').map((l) => l.trim()).filter(Boolean));
+
+function claudeCheck(dir) {
+  const r = { dir, agents: readIf(path.join(dir, 'AGENTS.md')), blockers: [], link: null };
+  const claudePath = path.join(dir, 'CLAUDE.md');
+  try { if (fs.lstatSync(claudePath).isSymbolicLink()) r.link = fs.readlinkSync(claudePath); } catch {}
+  if (r.link && path.basename(r.link) === 'AGENTS.md') return Object.assign(r, { state: 'read', how: 'CLAUDE.md links to AGENTS.md' });
+
+  const homeClaude = path.join(os.homedir(), '.claude', 'CLAUDE.md');
+  for (let d = path.resolve(dir); ; d = path.dirname(d)) {
+    for (const f of CLAUDE_FILES) {
+      const p = path.join(d, f);
+      if (p !== homeClaude && fs.existsSync(p)) r.blockers.push(p);
+    }
+    if (path.dirname(d) === d) break;
+  }
+  if (!r.blockers.length) return Object.assign(r, { state: 'read', how: 'no CLAUDE.md' });
+
+  const claude = readIf(claudePath);
+  const here = '(?:\\./)?AGENTS\\.md';
+  if (importsIn(claude, here) || importsIn(readIf(path.join(dir, 'CLAUDE.local.md')), here)
+    || importsIn(readIf(path.join(dir, '.claude', 'CLAUDE.md')), '\\.\\./AGENTS\\.md')) {
+    return Object.assign(r, { state: 'read', how: 'imported with @AGENTS.md' });
+  }
+  if (claude && r.agents) {
+    const have = lineSet(claude);
+    const want = [...lineSet(r.agents)];
+    if (want.length && want.filter((l) => have.has(l)).length / want.length >= 0.9) return Object.assign(r, { state: 'same' });
+  }
+  const title = (r.agents || '').split('\n').find((l) => /^#\s/.test(l)) || '';
+  if (/\bcodex\b/i.test(title) && !/claude/i.test(title)) return Object.assign(r, { state: 'codex' });
+  return Object.assign(r, { state: 'skipped' });
+}
+
+function areaCheck(text) {
+  const heads = text.split('\n').filter((l) => /^#{1,4}\s/.test(l));
+  return AREAS.filter(([, re]) => !heads.some((h) => re.test(h))).map(([name]) => name);
+}
+
+function describe(r) {
+  const rel = (p) => path.relative(r.dir, p) || p;
+  if (r.state === 'read') return `reads AGENTS.md (${r.how})`;
+  if (r.state === 'same') return 'skips AGENTS.md, but CLAUDE.md already holds the same text';
+  if (r.state === 'codex') return 'skips AGENTS.md, which is titled for Codex only (likely on purpose)';
+  return `SKIPS AGENTS.md: ${r.blockers.map(rel).join(', ')} wins`;
+}
+
+// Add `@AGENTS.md` to the top of CLAUDE.md (or create a CLAUDE.md holding only that line).
+function fixClaude(r, dry) {
+  if (r.state !== 'skipped') return null;
+  const p = path.join(r.dir, 'CLAUDE.md');
+  if (r.link) return `left CLAUDE.md alone: it links to ${r.link}, not AGENTS.md`;
+  const old = readIf(p);
+  if (!dry) fs.writeFileSync(p, old === null ? '@AGENTS.md\n' : `@AGENTS.md\n\n${old}`);
+  return `${dry ? '[dry-run] would add' : 'added'} @AGENTS.md to the top of ${old === null ? 'a new ' : ''}CLAUDE.md`;
+}
+
+function findAgentDirs(start, depth = 4) {
+  const skip = new Set(['node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'venv', '__pycache__', 'coverage']);
+  const found = [];
+  (function walk(d, left) {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    if (entries.some((e) => e.name === 'AGENTS.md' && !e.isDirectory())) found.push(d);
+    if (!left) return;
+    for (const e of entries) {
+      if (e.isDirectory() && !e.name.startsWith('.') && !skip.has(e.name)) walk(path.join(d, e.name), left - 1);
+    }
+  })(start, depth);
+  return found.sort();
+}
+
+// --check / --scan / --fix-claude. Returns the exit code: 1 while Claude Code skips an AGENTS.md.
+function audit({ dirs, scan, fix, dry, base }) {
+  if (!dirs.length) { console.log(`agents-md: no AGENTS.md found under ${base}.`); return 0; }
+  let skipping = 0;
+  if (!scan) {
+    let r = claudeCheck(dirs[0]);
+    if (r.agents === null) { console.log(`agents-md: no AGENTS.md in ${dirs[0]}. Run agents-md to create one.`); return 0; }
+    console.log(`agents-md check: ${dirs[0]}`);
+    console.log(`- Claude Code: ${describe(r)}`);
+    if (fix) {
+      const did = fixClaude(r, dry);
+      if (did) console.log(`  ${did}`);
+      if (!dry) r = claudeCheck(dirs[0]);
+    } else if (r.state === 'skipped') {
+      console.log('  Fix: npx @eugeniughelbur/agents-md --fix-claude (adds @AGENTS.md to the top of CLAUDE.md)');
+    }
+    if (r.state === 'skipped') skipping++;
+    const missing = areaCheck(r.agents);
+    console.log(`- GitHub's 6 areas (judged by headings): ${6 - missing.length} of 6${missing.length ? ` (missing: ${missing.join(', ')})` : ''}`);
+    const stubs = (r.agents.match(/_TBD:/g) || []).length;
+    if (stubs) console.log(`- Stubs left to fill: ${stubs}`);
+    const kib = Buffer.byteLength(r.agents) / 1024;
+    console.log(`- Size: ${kib.toFixed(1)} KiB${kib * 1024 > CODEX_LIMIT ? ' (over the 32 KiB Codex reads by default; it cuts the rest)' : ' (Codex reads up to 32 KiB by default)'}`);
+    return skipping ? 1 : 0;
+  }
+  const label = { read: 'ok    ', same: 'same  ', codex: 'codex ', skipped: 'SKIPS ' };
+  for (const dir of dirs) {
+    let r = claudeCheck(dir);
+    const missing = areaCheck(r.agents);
+    console.log(`${label[r.state]} ${path.relative(base, dir) || '.'}  ${describe(r)}; areas ${6 - missing.length}/6`);
+    if (fix) {
+      const did = fixClaude(r, dry);
+      if (did) console.log(`       ${did}`);
+      if (!dry) r = claudeCheck(dir);
+    }
+    if (r.state === 'skipped') skipping++;
+  }
+  const fixedNote = fix && !dry ? ' after the fix' : '';
+  console.log(`\nClaude Code skips AGENTS.md in ${skipping} of ${dirs.length} folders${fixedNote}.`);
+  if (skipping && !fix) console.log('Fix them: add --fix-claude. Folders marked "same" or "codex" are left alone.');
+  return skipping ? 1 : 0;
+}
+
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
 if (flag('-h') || flag('--help')) {
   console.log(`agents-md — generate/maintain AGENTS.md (the cross-tool agent standard)
 
 Usage: agents-md [options]
-  --dry-run     print what would change, write nothing
-  --no-symlink  do not create the CLAUDE.md -> AGENTS.md symlink
-  -h, --help    this help
+  --dry-run       print what would change, write nothing
+  --no-symlink    do not create the CLAUDE.md -> AGENTS.md symlink
+  --check         check this repo: does Claude Code read AGENTS.md, which of
+                  GitHub's 6 areas it covers, stubs left, size vs the Codex limit
+  --scan [dir]    run the Claude Code check on every folder with an AGENTS.md
+                  under dir (default: current folder, 4 levels deep)
+  --fix-claude    where Claude Code skips AGENTS.md, add @AGENTS.md to the top
+                  of CLAUDE.md (works with --check or --scan; try --dry-run first)
+  -h, --help      this help
+
+--check and --scan exit with 1 while Claude Code skips an AGENTS.md, so CI can catch it.
 
 Safe by design: re-runs refresh only the marked regions; a handwritten AGENTS.md
 with no markers is never overwritten (a AGENTS.generated.md is written instead).`);
@@ -74,9 +217,20 @@ with no markers is never overwritten (a AGENTS.generated.md is written instead).
 }
 const DRY = flag('--dry-run');
 const NO_SYMLINK = flag('--no-symlink');
+const SCAN = flag('--scan');
+const FIX = flag('--fix-claude');
+const CHECK = flag('--check') || SCAN || FIX;
+const startDir = process.cwd();
 
 // ---------- locate repo ----------
 const root = sh('git rev-parse --show-toplevel') || process.cwd();
+
+if (CHECK) {
+  const i = args.indexOf('--scan');
+  const arg = SCAN && args[i + 1] && !args[i + 1].startsWith('-') ? args[i + 1] : '.';
+  const base = SCAN ? path.resolve(startDir, arg) : root;
+  process.exit(audit({ dirs: SCAN ? findAgentDirs(base) : [root], scan: SCAN, fix: FIX, dry: DRY, base }));
+}
 process.chdir(root);
 
 // ---------- detect facts ----------
@@ -315,15 +469,18 @@ function main() {
   if (kept.length) console.log(`Kept ${kept.length} section(s) you edited: ${kept.join(', ')}. To regenerate one, empty it and keep its markers.`);
   if (mode === 'sidecar') console.log(`AGENTS.md exists without markers — left it untouched and wrote AGENTS.generated.md. Merge or adopt it.`);
 
-  // CLAUDE.md compatibility (Claude Code does not read AGENTS.md natively)
+  // CLAUDE.md compatibility. Claude Code reads AGENTS.md only while no CLAUDE.md exists
+  // (v2.1.277+), and older versions never read it. The symlink covers both cases. A plain
+  // markdown link would not load the file; the `@AGENTS.md` import line does.
   if (!NO_SYMLINK && mode !== 'sidecar') {
     if (!f.claudeExists) {
       try { fs.symlinkSync('AGENTS.md', path.join(root, 'CLAUDE.md')); console.log('Linked CLAUDE.md -> AGENTS.md.'); }
-      catch { fs.writeFileSync(path.join(root, 'CLAUDE.md'), 'See [AGENTS.md](AGENTS.md).\n'); console.log('Wrote CLAUDE.md pointing to AGENTS.md.'); }
+      catch { fs.writeFileSync(path.join(root, 'CLAUDE.md'), '@AGENTS.md\n'); console.log('Wrote CLAUDE.md that imports AGENTS.md (@AGENTS.md).'); }
     } else {
-      let linked = false;
-      try { linked = fs.lstatSync(path.join(root, 'CLAUDE.md')).isSymbolicLink() && fs.readlinkSync(path.join(root, 'CLAUDE.md')) === 'AGENTS.md'; } catch {}
-      console.log(linked ? 'CLAUDE.md already links to AGENTS.md.' : 'CLAUDE.md already exists (not our symlink) — left as-is. Point it at AGENTS.md yourself.');
+      const r = claudeCheck(root);
+      if (r.state === 'read') console.log(`Claude Code reads AGENTS.md here (${r.how}).`);
+      else console.log('CLAUDE.md exists, so Claude Code skips AGENTS.md here. Left CLAUDE.md as-is.\n'
+        + 'Fix: npx @eugeniughelbur/agents-md --fix-claude (adds @AGENTS.md to the top of CLAUDE.md).');
     }
   }
   console.log('Done. Re-run any time; it is a safe refresh, not a reset.');

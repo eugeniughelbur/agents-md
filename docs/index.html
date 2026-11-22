@@ -52,7 +52,7 @@
   "mainEntity": [
     { "@type": "Question", "name": "What is AGENTS.md?", "acceptedAnswer": { "@type": "Answer", "text": "AGENTS.md is an open, cross-tool standard file that tells AI coding agents how to work in your repository: its build and test commands, code conventions, gotchas, and do-not-touch boundaries. It originated at OpenAI in 2025 and is now governed by the Linux Foundation's Agentic AI Foundation. Think of it as a README for agents." } },
     { "@type": "Question", "name": "How do I generate an AGENTS.md?", "acceptedAnswer": { "@type": "Answer", "text": "Run npx github:eugeniughelbur/agents-md in your repo. It detects your stack, commands, and structure, writes AGENTS.md, and symlinks CLAUDE.md. Anything it cannot detect is left as a clearly marked stub for you to fill in." } },
-    { "@type": "Question", "name": "AGENTS.md vs CLAUDE.md, which should I use?", "acceptedAnswer": { "@type": "Answer", "text": "Use AGENTS.md as the single source, then symlink CLAUDE.md to it. Most agents read AGENTS.md natively; Claude Code reads CLAUDE.md, so the symlink covers both. agents-md sets this up automatically." } },
+    { "@type": "Question", "name": "AGENTS.md vs CLAUDE.md, which should I use?", "acceptedAnswer": { "@type": "Answer", "text": "Use AGENTS.md as the single source. Claude Code reads AGENTS.md since v2.1.277, but only when no CLAUDE.md, .claude/CLAUDE.md or CLAUDE.local.md exists in the folder or above. If you keep a CLAUDE.md, put @AGENTS.md on its first line, or make it a symlink to AGENTS.md. Run agents-md --check to see if Claude Code skips the file." } },
     { "@type": "Question", "name": "Is agents-md safe to re-run?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Re-runs refresh only the regions wrapped in HTML-comment markers; everything outside is preserved. A handwritten AGENTS.md with no markers is never overwritten, agents-md writes AGENTS.generated.md instead." } }
   ]
 }
@@ -68,7 +68,7 @@
   <img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
 </p>
 
-<p>One <code>AGENTS.md</code> works across <strong>Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin</strong>, and more. <code>CLAUDE.md</code> is pointed at it via symlink. <code>agents-md</code> writes a great one by reading your repo, and it is <strong>safe to re-run</strong>: it only updates the regions it generated and never clobbers anything you wrote by hand.</p>
+<p>One <code>AGENTS.md</code> works across <strong>Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin</strong>, and more. Claude Code reads it too, but only while no <code>CLAUDE.md</code> exists, so <code>agents-md</code> links <code>CLAUDE.md</code> to it and can check any repo for that silent skip. <code>agents-md</code> writes a great one by reading your repo, and it is <strong>safe to re-run</strong>: it only updates the regions it generated and never clobbers anything you wrote by hand.</p>
 
 <h2>Quick start</h2>
 <pre><code>cd your-repo
@@ -88,7 +88,7 @@ npx @eugeniughelbur/agents-md</code></pre>
 <table>
 <tr><th>File</th><th>Read by</th><th>What it is</th></tr>
 <tr><td><strong>AGENTS.md</strong></td><td>Codex, Cursor, Copilot, Gemini CLI, Aider, Windsurf, Zed, Devin</td><td>The cross-tool standard for agent instructions</td></tr>
-<tr><td>CLAUDE.md</td><td>Claude Code</td><td>Tool-specific; symlink it to AGENTS.md</td></tr>
+<tr><td>CLAUDE.md</td><td>Claude Code</td><td>Tool-specific. While it exists, Claude Code skips AGENTS.md, so symlink it or put <code>@AGENTS.md</code> on its first line</td></tr>
 <tr><td>.cursorrules</td><td>Cursor</td><td>Tool-specific (Cursor also reads AGENTS.md)</td></tr>
 <tr><td>.github/copilot-instructions.md</td><td>GitHub Copilot</td><td>Tool-specific (Copilot also reads AGENTS.md)</td></tr>
 <tr><td>llms.txt</td><td>LLMs / AI search</td><td>For documentation sites, not repo agent instructions</td></tr>
@@ -98,7 +98,7 @@ npx @eugeniughelbur/agents-md</code></pre>
 <h3>What is AGENTS.md?</h3>
 <p>AGENTS.md is an open, cross-tool standard file that tells AI coding agents how to work in your repository: its build and test commands, code conventions, gotchas, and do-not-touch boundaries. It originated at OpenAI in 2025 and is now governed by the Linux Foundation's Agentic AI Foundation. Think of it as a README for agents.</p>
 <h3>AGENTS.md vs CLAUDE.md, which should I use?</h3>
-<p>Use AGENTS.md as the single source, then symlink CLAUDE.md to it. Most agents read AGENTS.md natively; Claude Code reads CLAUDE.md, so the symlink covers both. agents-md sets this up automatically.</p>
+<p>Use AGENTS.md as the single source. Claude Code reads AGENTS.md since v2.1.277, but only when no CLAUDE.md, .claude/CLAUDE.md or CLAUDE.local.md exists in the folder or above. If you keep a CLAUDE.md, put @AGENTS.md on its first line, or make it a symlink to AGENTS.md. Run agents-md --check to see if Claude Code skips the file.</p>
 <h3>Is it safe to re-run? Will it overwrite my edits?</h3>
 <p>Yes, it is safe. Re-runs refresh only the regions wrapped in HTML-comment markers; everything outside the markers is preserved. A handwritten AGENTS.md with no markers is never overwritten.</p>
 <h3>Does it need an API key or send my code anywhere?</h3>
