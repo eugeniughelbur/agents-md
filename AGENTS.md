@@ -29,7 +29,8 @@ Still check the three write modes (create, marker-update, no-clobber sidecar) by
 
 <!-- agents-md:begin id=structure -->
 ## Project structure
-- `bin/agents-md.js` — the CLI (detect facts → build sections → safe write → symlink CLAUDE.md)
+- `bin/agents-md.js`: the CLI (detect facts → build sections → safe write → symlink CLAUDE.md),
+  plus `--check` / `--scan` / `--fix-claude` for the Claude Code skip
 - `SKILL.md` — the Claude Code skill (LLM-powered variant; same contract)
 - `templates/AGENTS.template.md` — the section skeleton with markers
 - `README.md`, `llms.txt`, `docs/` — docs + discoverability surface
@@ -55,7 +56,10 @@ Conventional, descriptive commits.
 - The marker regex must escape the HTML-comment markers; a bad regex would corrupt user files.
 - **Never** widen the write logic to overwrite a markerless `AGENTS.md` — the no-clobber sidecar
   is the product's core promise. Breaking it breaks trust.
-- `CLAUDE.md` symlink is intentional: Claude Code does not read `AGENTS.md` natively (as of 2026).
+- `CLAUDE.md` symlink is intentional. Claude Code reads `AGENTS.md` since v2.1.277, but only while
+  no `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` exists in the folder or above. The
+  symlink keeps one file for both. A markdown link to AGENTS.md does not load it; `@AGENTS.md` does.
+- `--check` / `--scan` exit 1 while Claude Code skips an AGENTS.md. Keep that contract: CI relies on it.
 <!-- agents-md:end id=gotchas -->
 
 <!-- agents-md:begin id=security -->

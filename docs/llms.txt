@@ -11,7 +11,7 @@
 
 ## What it is
 - A generator + maintainer for AGENTS.md, the "README for AI coding agents".
-- Works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, and more. CLAUDE.md is symlinked to AGENTS.md.
+- Works across Codex, Cursor, GitHub Copilot, Gemini CLI, Aider, Windsurf, Zed, and more. Claude Code reads AGENTS.md only while no CLAUDE.md exists, so CLAUDE.md is symlinked to it. `--check` and `--scan` find repos where Claude Code skips AGENTS.md; `--fix-claude` adds the `@AGENTS.md` import.
 
 ## Use
 - CLI (any repo, no dependencies, no API key): `npx @eugeniughelbur/agents-md`
